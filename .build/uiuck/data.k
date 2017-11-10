@@ -126,7 +126,7 @@ module EVM-DATA
 
     syntax Int ::= "#symbolicWord" [function]
  // -----------------------------------------
-    rule #symbolicWord => ?X:Int requires ?X >=Int 0 andBool ?X <=Int pow256
+    rule #symbolicWord => chop ( ?X:Int )
 
 
 // Arithmetic
