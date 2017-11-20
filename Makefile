@@ -5,7 +5,7 @@ endif
 # Common to all versions of K
 # ===========================
 
-.PHONY: all clean build tangle defn proofs split-tests test
+.PHONY: all clean build tangle defn split-tests test
 
 all: build split-tests
 
@@ -18,7 +18,7 @@ build: tangle .build/${K_VERSION}/driver-kompiled/extras/timestamp
 # Tangle from *.md files
 # ----------------------
 
-tangle: defn proofs
+tangle: defn split-proof-tests
 
 defn_dir=.build/${K_VERSION}
 defn_files=${defn_dir}/driver.k ${defn_dir}/data.k ${defn_dir}/evm.k ${defn_dir}/analysis.k ${defn_dir}/krypto.k ${defn_dir}/verification.k
@@ -38,7 +38,7 @@ proof_files=${proof_dir}/sum-to-n-spec.k \
 			${proof_dir}/hkg/transferFrom-else-spec.k ${proof_dir}/hkg/transferFrom-then-spec.k \
 			${proof_dir}/bad/hkg-token-buggy-spec.k
 
-proofs: $(proof_files)
+split-proof-tests: $(proof_files)
 
 tests/proofs/sum-to-n-spec.k: proofs/sum-to-n.md
 	@echo "==  tangle: $@"
@@ -58,7 +58,7 @@ tests/proofs/bad/hkg-token-buggy-spec.k: proofs/token-buggy-spec.md
 # Tests
 # -----
 
-split-tests: split-vm-tests split-bchain-tests
+split-tests: split-vm-tests split-bchain-tests split-proof-tests
 
 split-vm-tests: \
 		  $(patsubst tests/ethereum-tests/%.json,tests/%/make.timestamp, $(wildcard tests/ethereum-tests/VMTests/*/*.json)) \
