@@ -5,7 +5,7 @@ endif
 # Common to all versions of K
 # ===========================
 
-.PHONY: all clean build tangle defn split-tests test
+.PHONY: all clean build defn split-tests test
 
 all: build split-tests
 
@@ -13,12 +13,10 @@ clean:
 	rm -r .build
 	find tests/proofs/ -name '*.k' -delete
 
-build: tangle .build/${K_VERSION}/driver-kompiled/extras/timestamp
+build: defn .build/${K_VERSION}/driver-kompiled/extras/timestamp
 
 # Tangle definition from *.md files
 # ---------------------------------
-
-tangle: defn split-proof-tests
 
 defn_dir=.build/${K_VERSION}
 defn_files=${defn_dir}/driver.k ${defn_dir}/data.k ${defn_dir}/evm.k ${defn_dir}/analysis.k ${defn_dir}/krypto.k ${defn_dir}/verification.k
