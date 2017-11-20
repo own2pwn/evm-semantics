@@ -26,9 +26,10 @@ pretty_diff() {
 run_make() {
     local make_opts=
     type pandoc-tangle >/dev/null 2>&1 || {
-        make_opts="--assume-old ethereum.md --assume-old evm.md \
-                   --assume-old data.md     --assume-old krypto.md \
-                   --assume-old analysis.md --assume-old verification.md"
+        make_opts="--assume-old ethereum.md   --assume-old evm.md \
+                   --assume-old data.md       --assume-old krypto.md \
+                   --assume-old analysis.md   --assume-old verification.md \
+                   --assume-old proofs/hkg.md --assume-old proofs/sum-to-n.md"
         warning "pandoc-tangle not installed."  \
                 "Ignoring changes in markdown files\n"
     }
