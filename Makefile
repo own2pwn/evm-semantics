@@ -5,7 +5,7 @@ endif
 # Common to all versions of K
 # ===========================
 
-.PHONY: all clean build defn split-tests test
+.PHONY: all clean build defn split-tests vm-tests split-bchain-tests split-proof-tests test
 
 all: build split-tests
 
@@ -30,7 +30,7 @@ defn: $(defn_files)
 # Tests
 # -----
 
-split-tests: split-bchain-tests split-proof-tests
+split-tests: vm-tests split-bchain-tests split-proof-tests
 
 tests/ethereum-tests/make.timestamp:
 	@echo "==  git submodule: cloning upstreams test repository"
@@ -67,6 +67,8 @@ vm-test: $(passing_vm_targets)
 blockchain-test: $(passing_blockchain_targets)
 
 # ### VMTests
+
+vm-tests: tests/ethereum-tests/make.timestamp
 
 split-vm-tests: \
 		  $(patsubst tests/ethereum-tests/%.json,tests/%/make.timestamp, $(wildcard tests/ethereum-tests/VMTests/*/*.json))
