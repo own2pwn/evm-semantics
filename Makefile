@@ -32,16 +32,16 @@ defn: $(defn_files)
 
 split-tests: split-bchain-tests split-proof-tests
 
-tests/ethereum-tests/%.json:
+tests/ethereum-tests/make.timestamp:
 	@echo "==  git submodule: cloning upstreams test repository"
 	git submodule update --init -- tests/ethereum-tests
+	touch $@
 
 tests/%/make.timestamp: tests/ethereum-tests/%.json
 	@echo "==   split: $@"
 	mkdir -p $(dir $@)
 	tests/split-test.py $< $(dir $@)
 	touch $@
-
 
 #passing_test_file=tests/passing.expected
 #blockchain_tests=$(shell cat ${passing_test_file})
