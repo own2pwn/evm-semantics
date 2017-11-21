@@ -67,7 +67,7 @@ filter_tests() {
     esac
 }
 
-list_vm()     { run_make vm-tests     >&2 ; find "tests/VMTests"         -name '*.json' | grep -v 'loop_stacklimit_1021' ; }
+list_vm()     { run_make vm-tests     >&2 ; find "tests/VMTests"         -name '*.json' ; }
 list_bchain() { run_make bchain-tests >&2 ; find "tests/BlockchainTests" -name '*.json' ; }
 list_proof()  { run_make proof-tests  >&2 ; find "tests/proofs"          -name '*-spec.k' -not -path 'tests/proofs/bad/*' ; }
 test_lists="vm bchain proof"
