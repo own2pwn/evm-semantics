@@ -17,39 +17,20 @@ failure()  { echo -e "\e[31m== failure: $@\e[0m"; }
 
 pretty_diff() {
     if type colordiff >/dev/null 2>&1; then
-        colordiff -u "$@"
+        colordiff -u -b "$@"
     else
-        diff -u "$@"
+        diff -u -b "$@"
     fi
 }
 
-lint_krun_uiuck() {
+lint_krun() {
     # Format, &gt; entity > and make each K task start on a new line
     xmllint -format - | sed -e 's/&gt;/>/g'  -e 's/~>/\n   ~>/g'
 }
 
-lint_krun_rvk() { cat - ; }
-
-detect_k_version() {
-    type kompile >/dev/null || die 'kompile not in $PATH'
-    if krun --version | grep 'RV' >/dev/null 2>&1; then
-        K_VERSION=rvk
-    else
-        K_VERSION=uiuck
-    fi
-    progress "Using $K_VERSION"
-}
 
 run_make() {
-    local make_opts=
-    type pandoc-tangle >/dev/null 2>&1 || {
-        make_opts="--assume-old ethereum.md --assume-old evm.md \
-                   --assume-old data.md     --assume-old krypto.md \
-                   --assume-old analysis.md --assume-old verification.md"
-        warning "pandoc-tangle not installed."  \
-                "Ignoring changes in markdown files\n"
-    }
-    make K_VERSION=${K_VERSION} -s $make_opts $@
+    make -s "$@"
 }
 
 # Test Filters and Lists
@@ -66,49 +47,54 @@ filter_tests() {
     esac
 }
 
-list_vm()      { find "tests/VMTests"         -name '*.json' | grep -v 'loop_stacklimit_1021' ; }
-list_bchain()  { find "tests/BlockchainTests" -name '*.json' ; }
+list_vm()      { find "tests/VMTests"         -name '*.json' ; }
+list_bchain()  { find "tests/BlockchainTests" -name '*.json' | grep -v "Constantinople" | grep -v "Byzantium"  ; }
 test_lists="vm bchain"
 
 list_gas_analysis() { find "tests/gas-analysis" -name '*.evm' ; }
 list_proofs()       { find "tests/proofs"       -name '*-spec.k' -not -path 'tests/proofs/bad/*' ; }
 test_lists="$test_lists gas_analysis proofs"
 
-list_rvk()   { list_vm ; }
-list_uiuck() { cat tests/short-list ; list_gas_analysis ; list_proofs ; }
-list_all()   { list_$K_VERSION ; }
+list_all()   { list_vm ; list_bchain ; list_gas_analysis ; list_proofs ;}
 list_quick() { list_all | sort -R | head -n 20 ; }
-test_lists="$test_lists rvk uiuck all quick"
+test_lists="$test_lists all quick"
 
 # Runners
 # -------
 
-run_uiuck() {
+run_java() {
     local run_file=$1; shift
+    local backend=$1; shift
     local krun_opts=()
     export K_OPTS=-Xss500m
     export cSCHEDULE=${cSCHEDULE:-DEFAULT}
     case "$run_file" in
-       *gas-analysis/*   ) krun_opts=( -cMODE=GASANALYZE "$run_file" )             ;;
-       *VMTests/*        ) krun_opts=( -cMODE=VMTESTS    "$run_file" )             ;;
-       *BlockchainTests/*) krun_opts=( -cMODE=NORMAL     "$run_file" )             ;;
+       *gas-analysis/*   ) krun_opts=( -cMODE=GASANALYZE "$run_file" ) ;;
+       *VMTests/*        ) krun_opts=( -cMODE=VMTESTS    "$run_file" ) ;;
+       *BlockchainTests/*) krun_opts=( -cMODE=NORMAL     "$run_file" ) ;;
        *                 ) die "Don't know how to set 'krun_opts' for '$run_file'" ;;
     esac
-    krun --directory .build/$K_VERSION/ -cSCHEDULE=$cSCHEDULE "${krun_opts[@]}" "$@"
+    krun --debug --directory .build/$backend/ -cSCHEDULE=${cSCHEDULE} "${krun_opts[@]}" "$@"
 }
 
-run_rvk() {
+run_ocaml() {
     test_file="$1"
+    case "$test_file" in
+       *gas-analysis/*   ) mode=GASANALYZE                                     ;;
+       *VMTests/*        ) mode=VMTESTS                                        ;;
+       *BlockchainTests/*) mode=NORMAL                                         ;;
+       *                 ) die "Don't know how to set 'mode' for '$test_file'" ;;
+    esac
     (   set +e
-        interpreter="$(dirname "$0")/.build/rvk/ethereum-kompiled/interpreter"
+        interpreter="$(dirname "$0")/.build/ocaml/ethereum-kompiled/interpreter"
         kast="$(mktemp)"
         output="$(mktemp)"
         kast_output="$(mktemp)"
         trap "rm -rf $kast $output $kast_output" INT TERM EXIT
         "$(dirname "$0")/kast-json.py" "$test_file" > "$kast"
         set +e
-        $interpreter "$(dirname "$0")/.build/rvk/ethereum-kompiled/realdef.cma" -c PGM "$kast" textfile \
-                     -c SCHEDULE '`DEFAULT_EVM`(.KList)' text -c MODE '`VMTESTS_EVM`(.KList)' text \
+        $interpreter "$(dirname "$0")/.build/ocaml/ethereum-kompiled/realdef.cma" -c PGM "$kast" textfile \
+                     -c SCHEDULE '`DEFAULT_EVM`(.KList)' text -c MODE "\`${mode}_EVM\`(.KList)" text \
                      --output-file "$output"
         exit_status="$?"
         k-bin-to-text "$output" "$kast_output"
@@ -119,14 +105,13 @@ run_rvk() {
 }
 
 run_proof() {
-    [[ "$K_VERSION" == 'uiuck' ]] || die "Proofs must be run with 'K_VERSION=uiuck'."
     run_make
     export K_OPTS=-Xmx2G
     local proof_file="$1"; shift
     [[ -f "$proof_file" ]] || die "$proof_file does not exist"
     local cSCHEDULE=${cSCHEDULE:-DEFAULT}
     local cMODE=${cMODE:-NORMAL}
-    ( krun --directory .build/$K_VERSION/ -cSCHEDULE=$cSCHEDULE -cMODE=$cMODE \
+    ( krun --directory .build/java/ -cSCHEDULE=${cSCHEDULE} -cMODE=${cMODE} \
          --z3-executable tests/templates/dummy-proof-input.json --prove "$proof_file" \
          </dev/null # grumble grumble `krun --prove` consumes stdin
     )
@@ -136,14 +121,13 @@ run_krun() {
     run_make
     progress "running: $1"
     [[ -f "$1" ]] || die "$1 does not exist"
-    ( run_"$K_VERSION" "$1" | lint_krun_"$K_VERSION" )
+    ( run_ocaml "$1" )
 }
 
 run_kdebug() {
-    [[ "$K_VERSION" == 'uiuck' ]] || die "Debugger must be run with 'K_VERSION=uiuck'. Currently '$K_VERSION'."
     run_make
     progress "debugging: $1"
-    ( run_"$K_VERSION" "$1" --debug --debugger )
+    ( run_java "$1" java --debug --debugger )
 }
 
 # Testers
@@ -161,10 +145,16 @@ run_test() {
                                  --label actual   <(run_proof "$test_file")
                    )
                    ;;
+        *gas-analysis/* ) output_expected_file=tests/templates/output-"$mode".txt
+                   [[ -f "$test_file.out" ]] && output_expected_file="$test_file.out"
+                   ( pretty_diff --label expected <(cat "$output_expected_file") \
+                                 --label actual   <(run_java "$test_file" ocaml | lint_krun )
+                   )
+                   ;;
         *        ) output_expected_file=tests/templates/output-"$mode".txt
                    [[ -f "$test_file.out" ]] && output_expected_file="$test_file.out"
                    ( pretty_diff --label expected <(cat "$output_expected_file") \
-                                 --label actual   <(run_"$K_VERSION" "$test_file" | lint_krun_"$K_VERSION")
+                                 --label actual   <(run_ocaml "$test_file" )
                    )
                    ;;
     esac
@@ -173,7 +163,6 @@ run_test() {
 run_tests() {
     local test_count=0
     local test_failed=0
-    [[ "$K_VERSION" == 'rvk' ]] && ( kserver & ) && sleep 2
     run_make
     while read test_file; do
         progress "running: $test_file"
@@ -188,16 +177,13 @@ run_tests() {
         fi
         progress "failed: $test_failed / $test_count"
     done
-    [[ "$K_VERSION" == 'rvk' ]] && stop-kserver || true
     return $test_failed
 }
 
 run_partests() {
-    [[ "$K_VERSION" == 'rvk'   ]] && ( kserver & ) && sleep 2
     run_make
     exit_status=0
     parallel --joblog - ./Build test || exit_status="$?"
-    [[ "$K_VERSION" == 'rvk' ]] && stop-kserver || true
     return "$exit_status"
 }
 
@@ -205,8 +191,6 @@ run_partests() {
 # ----
 
 cd "$(dirname $0)"
-
-detect_k_version
 
 # test logs
 test_logs=".build/logs"
@@ -233,13 +217,12 @@ case "$run_command" in
     partests) list_$1 | filter_tests "${@:2}" | run_partests ;;
 
     *)             echo "
-    K_VERSION: $K_VERSION
     usage:
        $0       Defaults to '$0 make-build'
 
        # Building
        # --------
-       $0 make-<target>     Run 'make <target>' with 'K_VERSION' set
+       $0 make-<target>     Run 'make <target>'
 
        Useful <target>:
        -   tangle: Build the definition/proof files from the markdown files (requires pandoc-tangle)
@@ -250,7 +233,7 @@ case "$run_command" in
        $0 run   <pgm>   Run a single EVM program
        $0 test  <pgm>   Run a single EVM program like it's a test
        $0 debug <pgm>   Run a single EVM program in the debugger
-       $0 prove <spec>  Attempt to prove the specification using UIUC-K's RL prover
+       $0 prove <spec>  Attempt to prove the specification using K's RL prover
 
        Note: <pgm> and <spec> here are paths to files, *not* test lists.
        These files should be Ethereum programs (or specifications).
