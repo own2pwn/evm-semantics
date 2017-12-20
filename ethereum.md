@@ -15,14 +15,11 @@ requires "analysis.k"
 module ETHEREUM-SIMULATION
     imports EVM
     imports EVM-ANALYSIS
+    imports K-REFLECTION
 ```
 
 ```{.k .java}
     imports VERIFICATION
-```
-
-```{.k .rvk}
-    imports K-REFLECTION
 ```
 
 An Ethereum simulation is a list of Ethereum commands.

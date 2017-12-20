@@ -26,7 +26,17 @@ In the comments next to each cell, we've marked which component of the YellowPap
 
 ```{.k .java .ocaml}
     configuration <k> $PGM:EthereumSimulation </k>
+```
+
+```{.k .ocaml}
                   <exit-code exit=""> 1 </exit-code>
+```
+
+```{.k .java}
+                  <exit-code> 1 </exit-code>
+```
+
+```{.k .java .ocaml}
                   <mode> $MODE:Mode </mode>
                   <schedule> $SCHEDULE:Schedule </schedule>
                   <analysis> .Map </analysis>
@@ -183,9 +193,10 @@ Our semantics is modal, with the initial mode being set on the command line via 
 
 -   `NORMAL` executes as a client on the network would.
 -   `VMTESTS` skips `CALL*` and `CREATE` operations.
+-   `GASANALYZE` performs gas analysis of the program instead of executing normally.
 
 ```{.k .java .ocaml}
-    syntax Mode ::= "NORMAL" | "VMTESTS"
+    syntax Mode ::= "NORMAL" | "VMTESTS" | "GASANALYZE"
 ```
 
 -   `#setMode_` sets the mode to the supplied one.

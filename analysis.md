@@ -20,12 +20,6 @@ This can be used to ensure that computation will finish without throwing an exce
 Here we provide a simplistic gas analysis tool (which just returns an approximation of the gas used for each basic block).
 This tool should be extended to take advantage of the symbolic execution engine so that we can provide proper bounds on the gas used.
 
--   The mode `GASANALYZE` performs gas analysis of the program instead of executing normally.
-
-```{.k .java .ocaml}
-    syntax Mode ::= "GASANALYZE"
-```
-
 We'll need to make summaries of the state which collect information about how much gas has been used.
 
 -   `#beginSummary` appends a new (unfinished) summary entry in the `analysis` cell under the key `"gasAnalyze"`.
