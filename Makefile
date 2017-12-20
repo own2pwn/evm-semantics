@@ -1,7 +1,7 @@
 # Common to all versions of K
 # ===========================
 
-.PHONY: all clean build tangle defn proofs split-tests test
+.PHONY: all clean build tangle defn proofs split-tests test deps
 
 all: build split-tests
 
@@ -104,12 +104,23 @@ tests/ethereum-tests/%.json:
 	@echo "==  git submodule: cloning upstreams test repository"
 	git submodule update --init
 
+deps:
+	cd tests/ci/rv-k && mvn package
+	opam init
+	opam repository add k "tests/ci/rv-k/k-distribution/target/release/k/lib/opam" || opam repository set-url k "tests/ci/rv-k/k-distribution/target/release/k/lib/opam"
+	opam update
+	opam switch 4.03.0+k
+	opam install mlgmp zarith uuidm cryptokit secp256k1 bn128
+
+
+K_BIN=tests/ci/rv-k/k-distribution/target/release/k/bin
+
 # Java Backend Specific
 # ---------------------
 
 .build/java/ethereum-kompiled/timestamp: $(java_files)
 	@echo "== kompile: $@"
-	kompile --debug --main-module ETHEREUM-SIMULATION --backend java \
+	${K_BIN}/kompile --debug --main-module ETHEREUM-SIMULATION --backend java \
 					--syntax-module ETHEREUM-SIMULATION $< --directory .build/java
 
 # OCAML Backend Specific
@@ -117,7 +128,7 @@ tests/ethereum-tests/%.json:
 
 .build/ocaml/ethereum-kompiled/interpreter: $(ocaml_files) KRYPTO.ml
 	@echo "== kompile: $@"
-	kompile --debug --main-module ETHEREUM-SIMULATION \
+	${K_BIN}/kompile --debug --main-module ETHEREUM-SIMULATION \
 					--syntax-module ETHEREUM-SIMULATION $< --directory .build/ocaml \
 					--hook-namespaces KRYPTO --gen-ml-only -O3 --non-strict
 	ocamlfind opt -c .build/ocaml/ethereum-kompiled/constants.ml -package gmp -package zarith
@@ -125,7 +136,7 @@ tests/ethereum-tests/%.json:
 	ocamlfind opt -a -o semantics.cmxa KRYPTO.cmx
 	ocamlfind remove ethereum-semantics-plugin
 	ocamlfind install ethereum-semantics-plugin META semantics.cmxa semantics.a KRYPTO.cmi KRYPTO.cmx
-	kompile --debug --main-module ETHEREUM-SIMULATION \
+	${K_BIN}/kompile --debug --main-module ETHEREUM-SIMULATION \
 					--syntax-module ETHEREUM-SIMULATION $< --directory .build/ocaml \
 					--hook-namespaces KRYPTO --packages ethereum-semantics-plugin -O3 --non-strict
 	cd .build/ocaml/ethereum-kompiled && ocamlfind opt -o interpreter constants.cmx prelude.cmx plugin.cmx parser.cmx lexer.cmx run.cmx interpreter.ml -package gmp -package dynlink -package zarith -package str -package uuidm -package unix -package ethereum-semantics-plugin -linkpkg -inline 20 -nodynlink -O3 -linkall
