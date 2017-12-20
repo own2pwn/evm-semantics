@@ -4,11 +4,11 @@ Ethereum Simulations
 Ethereum is using the EVM to drive updates over the world state.
 Actual execution of the EVM is defined in [the EVM file](evm.md).
 
-```{.k .uiuck}
+```{.k .java}
 requires "verification.k"
 ```
 
-```{.k .uiuck .rvk}
+```{.k .java .ocaml}
 requires "evm.k"
 requires "analysis.k"
 
@@ -17,7 +17,7 @@ module ETHEREUM-SIMULATION
     imports EVM-ANALYSIS
 ```
 
-```{.k .uiuck}
+```{.k .java}
     imports VERIFICATION
 ```
 
@@ -28,7 +28,7 @@ module ETHEREUM-SIMULATION
 An Ethereum simulation is a list of Ethereum commands.
 Some Ethereum commands take an Ethereum specification (eg. for an account or transaction).
 
-```{.k .uiuck .rvk}
+```{.k .java .ocaml}
     syntax EthereumSimulation ::= ".EthereumSimulation"
                                 | EthereumCommand EthereumSimulation
  // ----------------------------------------------------------------
@@ -43,7 +43,7 @@ Some Ethereum commands take an Ethereum specification (eg. for an account or tra
 For verification purposes, it's much easier to specify a program in terms of its op-codes and not the hex-encoding that the tests use.
 To do so, we'll extend sort `JSON` with some EVM specific syntax, and provide a "pretti-fication" to the nicer input form.
 
-```{.k .uiuck .rvk}
+```{.k .java .ocaml}
     syntax JSON ::= Int | WordStack | OpCodes | Map | Call | SubstateLogEntry | Account
  // -----------------------------------------------------------------------------------
 
@@ -72,7 +72,7 @@ To do so, we'll extend sort `JSON` with some EVM specific syntax, and provide a 
 -   `start` places `#next` on the `<k>` cell so that execution of the loaded state begin.
 -   `flush` places `#finalize` on the `<k>` cell once it sees `#end` in the `<k>` cell, clearing any exceptions it finds.
 
-```{.k .uiuck .rvk}
+```{.k .java .ocaml}
     syntax EthereumCommand ::= "start"
  // ----------------------------------
     rule <mode> NORMAL     </mode> <k> start => #execute    ... </k>
@@ -89,7 +89,7 @@ To do so, we'll extend sort `JSON` with some EVM specific syntax, and provide a 
 -   `loadTx(_)` loads the next transaction to be executed into the current state.
 -   `finishTx` is a place-holder for performing necessary cleanup after a transaction.
 
-```{.k .uiuck .rvk}
+```{.k .java .ocaml}
     syntax EthereumCommand ::= "startTx"
  // ------------------------------------
     rule <k> startTx => #finalizeBlock ... </k>
@@ -196,7 +196,7 @@ To do so, we'll extend sort `JSON` with some EVM specific syntax, and provide a 
 -   `#finalizeBlock` is used to signal that block finalization procedures should take place (after transactions have executed).
 -   `#rewardOmmers(_)` pays out the reward to uncle blocks so that blocks are orphaned less often in Ethereum.
 
-```{.k .uiuck .rvk}
+```{.k .java .ocaml}
     syntax EthereumCommand ::= "#finalizeBlock" | #rewardOmmers ( JSONList )
  // ------------------------------------------------------------------------
     rule <k> #finalizeBlock => #rewardOmmers(OMMERS) ... </k>
@@ -236,7 +236,7 @@ To do so, we'll extend sort `JSON` with some EVM specific syntax, and provide a 
 -   `exception` only clears from the `<k>` cell if there is an exception preceding it.
 -   `failure_` holds the name of a test that failed if a test does fail.
 
-```{.k .uiuck .rvk}
+```{.k .java .ocaml}
     syntax EthereumCommand ::= "exception" | "failure" String | "success"
  // ---------------------------------------------------------------------
     rule <k> #exception ~> exception => . ... </k>
@@ -250,7 +250,7 @@ To do so, we'll extend sort `JSON` with some EVM specific syntax, and provide a 
 
 Note that `TEST` is sorted here so that key `"network"` comes before key `"pre"`.
 
-```{.k .uiuck .rvk}
+```{.k .java .ocaml}
     syntax EthereumCommand ::= "run" JSON
  // -------------------------------------
     rule run { .JSONList } => .
@@ -268,7 +268,7 @@ Note that `TEST` is sorted here so that key `"network"` comes before key `"pre"`
 
 -   `#loadKeys` are all the JSON nodes which should be considered as loads before execution.
 
-```{.k .uiuck .rvk}
+```{.k .java .ocaml}
     syntax Set ::= "#loadKeys" [function]
  // -------------------------------------
     rule #loadKeys => ( SetItem("env") SetItem("pre") SetItem("rlp") SetItem("network") SetItem("genesisRLP") )
@@ -281,7 +281,7 @@ Note that `TEST` is sorted here so that key `"network"` comes before key `"pre"`
 
 -   `#execKeys` are all the JSON nodes which should be considered for execution (between loading and checking).
 
-```{.k .uiuck .rvk}
+```{.k .java .ocaml}
     syntax Set ::= "#execKeys" [function]
  // -------------------------------------
     rule #execKeys => ( SetItem("exec") SetItem("lastblockhash") )
@@ -295,7 +295,7 @@ Note that `TEST` is sorted here so that key `"network"` comes before key `"pre"`
 -   `#postKeys` are a subset of `#checkKeys` which correspond to post-state account checks.
 -   `#checkKeys` are all the JSON nodes which should be considered as checks after execution.
 
-```{.k .uiuck .rvk}
+```{.k .java .ocaml}
     syntax Set ::= "#postKeys" [function] | "#allPostKeys" [function] | "#checkKeys" [function]
  // -------------------------------------------------------------------------------------------
     rule #postKeys    => ( SetItem("post") SetItem("postState") )
@@ -310,7 +310,7 @@ Note that `TEST` is sorted here so that key `"network"` comes before key `"pre"`
 
 -   `#discardKeys` are all the JSON nodes in the tests which should just be ignored.
 
-```{.k .uiuck .rvk}
+```{.k .java .ocaml}
     syntax Set ::= "#discardKeys" [function]
  // ----------------------------------------
     rule #discardKeys => ( SetItem("//") SetItem("_info") )
@@ -326,7 +326,7 @@ State Manipulation
 -   `clear` clears all the execution state of the machine.
 -   `clearX` clears the substate `X`, for `TX`, `BLOCK`, and `NETWORK`.
 
-```{.k .uiuck .rvk}
+```{.k .java .ocaml}
     syntax EthereumCommand ::= "clear"
  // ----------------------------------
     rule <k> clear => clearTX ~> clearBLOCK ~> clearNETWORK ... </k>
@@ -391,7 +391,7 @@ State Manipulation
 
 -   `mkAcct_` creates an account with the supplied ID (assuming it's already been chopped to 160 bits).
 
-```{.k .uiuck .rvk}
+```{.k .java .ocaml}
     syntax EthereumCommand ::= "mkAcct" Int
  // ---------------------------------------
     rule <k> mkAcct ACCT => #newAccount ACCT ... </k>
@@ -399,7 +399,7 @@ State Manipulation
 
 -   `load` loads an account or transaction into the world state.
 
-```{.k .uiuck .rvk}
+```{.k .java .ocaml}
     syntax EthereumCommand ::= "load" JSON
  // --------------------------------------
     rule load DATA : { .JSONList } => .
@@ -412,7 +412,7 @@ State Manipulation
 
 Here we perform pre-proccesing on account data which allows "pretty" specification of input.
 
-```{.k .uiuck .rvk}
+```{.k .java .ocaml}
     rule load "pre" : { (ACCTID:String) : ACCT } => mkAcct #parseAddr(ACCTID) ~> load "account" : { ACCTID : ACCT }
     rule load "account" : { ACCTID: { KEY : VALUE , REST } } => load "account" : { ACCTID : { KEY : VALUE } } ~> load "account" : { ACCTID : { REST } } requires REST =/=K .JSONList
 
@@ -426,7 +426,7 @@ Here we perform pre-proccesing on account data which allows "pretty" specificati
 
 The individual fields of the accounts are dealt with here.
 
-```{.k .uiuck .rvk}
+```{.k .java .ocaml}
     rule <k> load "account" : { ACCT : { "balance" : (BAL:Int) } } => . ... </k>
          <account>
            <acctID> ACCT </acctID>
@@ -461,7 +461,7 @@ The individual fields of the accounts are dealt with here.
 
 Here we load the environmental information.
 
-```{.k .uiuck .rvk}
+```{.k .java .ocaml}
     rule load "env" : { KEY : ((VAL:String) => #parseWord(VAL)) }
       requires KEY in (SetItem("currentTimestamp") SetItem("currentGasLimit") SetItem("currentNumber") SetItem("currentDifficulty"))
     rule load "env" : { KEY : ((VAL:String) => #parseHexWord(VAL)) }
@@ -496,7 +496,7 @@ Here we load the environmental information.
 
 The `"network"` key allows setting the fee schedule inside the test.
 
-```{.k .uiuck .rvk}
+```{.k .java .ocaml}
     rule <k> load "network" : SCHEDSTRING => . ... </k>
          <schedule> _ => #asScheduleString(SCHEDSTRING) </schedule>
 
@@ -512,7 +512,7 @@ The `"network"` key allows setting the fee schedule inside the test.
 
 The `"rlp"` key loads the block information.
 
-```{.k .uiuck .rvk}
+```{.k .java .ocaml}
     rule load "rlp" : (VAL:String => #rlpDecode(#unparseByteStack(#parseByteStack(VAL))))
     rule load "genesisRLP" : (VAL:String => #rlpDecode(#unparseByteStack(#parseByteStack(VAL))))
  // --------------------------------------------------------------------------------------------
@@ -566,7 +566,7 @@ The `"rlp"` key loads the block information.
 
 -   `check_` checks if an account/transaction appears in the world-state as stated.
 
-```{.k .uiuck .rvk}
+```{.k .java .ocaml}
     syntax EthereumCommand ::= "check" JSON
  // ---------------------------------------
     rule #exception ~> check J:JSON => check J ~> #exception
@@ -622,7 +622,7 @@ The `"rlp"` key loads the block information.
 
 Here we check the other post-conditions associated with an EVM test.
 
-```{.k .uiuck .rvk}
+```{.k .java .ocaml}
     rule check TESTID : { "out" : OUT } => check "out" : OUT ~> failure TESTID
  // --------------------------------------------------------------------------
     rule check "out" : ((OUT:String) => #parseByteStack(OUT))
@@ -740,7 +740,7 @@ Here we check the other post-conditions associated with an EVM test.
 
 TODO: case with nonzero ommers.
 
-```{.k .uiuck .rvk}
+```{.k .java .ocaml}
     rule check TESTID : { "uncleHeaders" : OMMERS } => check "ommerHeaders" : OMMERS ~> failure TESTID
  // --------------------------------------------------------------------------------------------------
     rule <k> check "ommerHeaders" : [ .JSONList ] => . ... </k> <ommerBlockHeaders> [ .JSONList ] </ommerBlockHeaders>
