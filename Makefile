@@ -42,6 +42,9 @@ tests/%/make.timestamp: tests/ethereum-tests/%.json
 	tests/split-test.py $< $(dir $@)
 	touch $@
 
+
+#passing_test_file=tests/passing.expected
+#blockchain_tests=$(shell cat ${passing_test_file})
 blockchain_tests=$(wildcard tests/BlockchainTests/*/*/*/*.json)
 vm_tests=$(wildcard tests/VMTests/*/*/*.json)
 all_tests=${vm_tests} ${blockchain_tests}
