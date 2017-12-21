@@ -30,7 +30,7 @@ defn: $(defn_files)
 # Tests
 # -----
 
-split-tests: split-vm-tests split-bchain-tests split-proof-tests
+split-tests: split-bchain-tests split-proof-tests
 
 tests/ethereum-tests/%.json:
 	@echo "==  git submodule: cloning upstreams test repository"
