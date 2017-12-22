@@ -38,10 +38,8 @@ If any check fails, the configuration retains the failed check at the top of the
 Using the Definition
 --------------------
 
-There are two versions of K available, [RV-K](https://github.com/runtimeverification/k) and [UIUC-K](https://github.com/kframework/k).
-This repository contains the build-products for both versions of K (there are slight differences) in `.build/$K_VERSION/`.
-Use RV-K for fast concrete execution, and UIUC-K for any symbolic reasoning.
-Make sure that you have set the `K_VERSION` environment variable in your shell (add `export K_VERSION=uiuck` or `export K_VERSION=rvk` to your `.bashrc` or equivalent).
+There are two backends of K available, the OCAML backend for concrete execution and the Java backend for symbolic reasoning and proofs.
+This repository contains the build-products for both backends in `.build/java/` and `.build/ocaml/`.
 
 The script `Build` supplied in this repository will build and run the definition (see `./Build help` to see more detailed usage information).
 Running any proofs or symbolic reasoning requires UIUC-K.
@@ -49,10 +47,9 @@ Running any proofs or symbolic reasoning requires UIUC-K.
 To run in a different mode (eg. in `GASANALYZE` mode), do `export cMODE=<OTHER_MODE>` before calling `./Build`.
 To run with a different fee schedule (eg. `HOMESTEAD` instead of `DEFAULT`), do `export cSCHEDULE=<OTHER_SCHEDULE>` before calling `./Build`.
 
-### Dependencies
+### Installing and building
 
-For using the `./Build` command and tests, we depend on `xmllint` (on Ubuntu via the package `libxml2-utils`).
-For developing, we depend on [`pandoc-tangle`](https://github.com/ehildenb/pandoc-tangle).
+See [INSTALL.md](INSTALL.md) for installation and build instructions.
 
 ### Interesting Branches
 
@@ -101,33 +98,6 @@ KDebug> p
 ... Big Configuration Here ...
 KDebug>
 ```
-
-### Helper Script `with-k`
-
-Not everyone wants to go through the process of installing K, so the script `./tests/ci/with-k` can be used to avoid that.
-The following will call the same `./Build` commands as above, but only after downloading, building, and setting up a fresh copy of RV-K or UIUC-K (as specified).
-
-```sh
-$ ./tests/ci/with-k rvk   ./Build run tests/VMTests/vmArithmeticTest/add0.json
-$ ./tests/ci/with-k uiuck ./Build prove tests/proofs/hkg/transfer-else-spec.k
-$ ./tests/ci/with-k rvk   ./Build test tests/VMTests/vmArithmeticTest/add0.json
-$ ./tests/ci/with-k uiuck ./Build prove tests/proofs/hkg/transfer-else-spec.k
-$ ./tests/ci/with-k uiuck ./Build debug tests/VMTests/vmArithmeticTest/add0.json
-```
-
-Note that running `./tests/ci/with-k` takes quite some time, which can be a pain when actively developing.
-To only download and setup K once for each session, you can do the following:
-
-```sh
-# Downloads and installs RV-K
-$ ./tests/ci/with-k rvk `which bash`
-
-# Now can just run `./Build` directly
-$ ./Build run tests/VMTests/vmArithmeticTest/add0.json
-$ ./Build test tests/VMTests/vmArithmeticTest/add0.json
-```
-
-The script `with-k` sets up the development environment with the fresh copy of K built and prefixed to `PATH` for the remaining commands.
 
 Contributing
 ------------
@@ -223,12 +193,6 @@ Ethereum state consists of two parts, the network state and the EVM execution st
 Right now the semantics declares the configuration for both of these components together, and many rules reach between these two subconfigurations.
 Separating the two subconfigurations and declaring an API for the network dynamics would provide a better understanding of the "necessary ingredients" for a consensus-driven distributed store.
 This would also allow us to experiment with alternative programming languages to EVM for future blockchain systems.
-
-### Full Transaction Execution
-
-Right now we are passing the VMTests, but haven't run tests on entire transactions.
-To have confidence in our semantics, we need to run the tests involving entire transactions (not just chunks of VM code).
-We are working on running the GeneralStateTests now as well.
 
 ### TODOs
 
